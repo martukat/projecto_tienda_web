@@ -1,19 +1,19 @@
 
 // Expresión regular solo números
-/** fuente: http://estilow3b.com/ejemplos-comunes-de-expresiones-regulares-javascript/ */
+// getElements
 
 //validacion
-function validaNum(checkNumero) {
-    const EXP_REG_NUMEROS = /^[0-9]+$/;
-    var checkNumero = document.getElementById("stock").value;// Números recibidos del formulario
+function validaNum(numeroStock) {
+    const EXP_REG_NUMEROS = /^[1-9]\d*$/;
+    // var numeroStock = document.getElementById("stock").value;// Números recibidos del formulario
+
 
     // Evaluamos números 
-    if (checkNumero.match(EXP_REG_NUMEROS) != null) {
-        console.log("Numero válido.")
+    if (numeroStock.match(EXP_REG_NUMEROS) != null) {
+        //alert("Numero válido.")
         return true;
     } else {
-
-        console.log("Numero inválido. Por favor, introduzca de nuevo.");
+        // alert("Numero inválido. Por favor, introduzca de nuevo.");
         return false;
     }
 
@@ -21,56 +21,24 @@ function validaNum(checkNumero) {
 
 
 //aqui vamos buacr en el json y ofrecerá las opciones de seleccion
-function call_ajax() {
-    let promesa1 = new Promise(function (resolve, reject) {
-        let xhttp = new XMLHttpRequest();
-        xhttp.open("GET", "productos.json", true);
-        xhttp.send();
-
-        xhttp.onreadystatechange = function () {
-            if (this.readyState == 4) {
-                if (this.status == 200) {
-                    //buscar dentro del archivo json productos 
-                    var jsonResponse = xhttp.responseText;
-                    //pasarlo a objeto
-                    var objeto_json = JSON.parse(jsonResponse);
-                    //acceder a las propiedades
-                    objeto_json.codigo_producto
-                    resolve(objeto_json);
-                } else {
-                    reject();
-                }
-            }
-
-        }
-
-    });
-    return promesa1;
-};
 
 
-//promise all
-Promise.all(call_ajax())
-    .then(e => console.log("todo ok "))
-    .catch(e => console.log("error"));
-
-console.log("hola")
 
 //----------------------------------
 
 const buscarInput = document.querySelector('#descripcion');
 const listaSugerencias = document.querySelector('#sugerencias');
+const cantidad = document.getElementById("stock");
+const btn = document.getElementById("submit");
 
 buscarInput.addEventListener('input', descripcion);
 
 function descripcion() {
-    const textoBuscado = buscarInput.value;
+    var textoBuscado = buscarInput.value;
     if (textoBuscado.trim().length > 0) {
         getSugerencias(textoBuscado)
             .then(mostrarSugerencias)
             .catch(gestionarError);
-    } else {
-        limpiarSugerencias();
     }
 }
 
@@ -91,35 +59,99 @@ function getSugerencias(textoBuscado) {
                     //pasarlo a objeto
                     var objeto_json = JSON.parse(jsonResponse);
                     //acceder a las propiedades
-                    var sugerencias = objeto_json.descripcion;
 
 
-                    const sugerenciasFiltradas = sugerencias.filter(sugerencia =>
-                        sugerencia.toLowerCase().startsWith(textoBuscado.toLowerCase()));
-                    resolve(sugerenciasFiltradas);
-                } else {
-                    reject();
+                    var sugerencias = objeto_json;
+                    console.log(cantidad);
+                    // console.log(objeto_json);
+                    var sugerenciasFiltradas = sugerencias.filter((sugerencia) =>
+
+                        sugerencia.descripcion.toLowerCase().startsWith(textoBuscado.toLowerCase())
+
+                    );
+
+                    if (sugerencias.filter(e => e.stock > 0)) {
+                        //  validaNum(cantidad);
+                        // sugerencias.filter(e => e.precio)
+                        //var prcioCantidad = sugerencias.filter(e => e.precio * cantidad )
+                        resolve(sugerenciasFiltradas.filter(e => e.stock > 0)
+                            .map(e => ` producto: ${e.descripcion} precio: ${e.precio}€   precio total por ${cantidad.value}: ${e.precio * cantidad.value}€  `))
+
+
+                    }
+
+
+                    // resolve(sugerenciasFiltradas.filter((e=> e.stock > 0).map( e=> e.descripcion)))
+
                 }
-            }
 
+            }
         }
 
-        
-    });
+    }
+
+    );
 
 }
 
+
+btn.addEventListener("submit", descripcion);
+
+function carritoCompra() {
+
+    let texto = document.getElementById("texto").value;
+    let div = document.createElement("div");
+    let text = document.createTextNode(texto);
+    let eliminar_bt = document.createElement("button");
+    div.className = "task";
+    eliminar_bt.className = "delete";
+    eliminar_bt.textContent = "eliminar ";
+
+    div.appendChild(text);
+
+    block.append(div);
+    div.appendChild(eliminar_bt);
+
+}
+
+var img;
+function mostrarImg() {
+
+    img = document.createElement("img");
+    img.src = "índice.jpeg";
+    window.document.body.appendChild(img);
+
+}
+/*
 Promise.all(getSugerencias())
     .then(e => console.log("todo ok "))
     .catch(e => console.log("error"));
+    */
 
 function mostrarSugerencias(sugerencias) {
     listaSugerencias.innerHTML = '';
+    var li = document.createElement('li');
+    var boton_anadir = document.createElement('input');
+    boton_anadir.addEventListener("click", crearCarrito);
+
     sugerencias.forEach(sugerencia => {
-        const li = document.createElement('li');
+
+        li.setAttribute("id", "producto");
         li.textContent = sugerencia;
         listaSugerencias.appendChild(li);
+
+        boton_anadir.setAttribute("id", "submit_anadir_carrito");
+        boton_anadir.setAttribute("type", "button");
+        boton_anadir.setAttribute("value", "Añadir");
+
+        //boton_anadir.textContent = " Añadir";
+        li.appendChild(boton_anadir);
+
+        li.addEventListener("mouseover", mostrarImg);
+        li.addEventListener("mouseout", limpiarSugerencias);
+
     });
+
 }
 
 function gestionarError(error) {
@@ -127,5 +159,43 @@ function gestionarError(error) {
 }
 
 function limpiarSugerencias() {
-    listaSugerencias.innerHTML = '';
+    img.src = '';
 }
+
+
+/***** PARTE DEL CARRITO F) */
+
+function crearCarrito() {
+    let lista_carrito = document.getElementById("carrito_lista");
+    let div_carrito = document.getElementById("carrito");
+    let valor = document.getElementById("producto").textContent; // pone el texto
+
+    let li = document.createElement("li");
+    let text = document.createTextNode(valor);
+    // boton eliminar producto
+    let eliminar_boton = document.createElement("button");
+    eliminar_boton.className = "delete";
+    eliminar_boton.textContent = "eliminar ";
+
+    //funcionalidad boton eliminar
+    eliminar_boton.onclick = function () {
+        this.parentNode.remove();
+    }
+
+    div_carrito.append(li)
+    li.append(eliminar_boton);
+    li.append(text);
+    lista_carrito.appendChild(li);
+
+
+}
+
+function calculaCarrito() {
+
+
+}
+
+
+
+
+
